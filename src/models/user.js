@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
+const jwt = require("jsonwebtoken")
+const bcrypt = require("bcrypt")
 const validator = require('validator');
+
 const userSchema = new Schema({
     firstName: { 
         type: String,
@@ -17,6 +20,7 @@ const userSchema = new Schema({
         lowercase : true,
         trim : true,
         unique: true,
+        index :  true,
         validate(val){
             if(!validator.isEmail(val)){
             throw new Error("EmailId is not valid "+ val)
@@ -48,11 +52,23 @@ const userSchema = new Schema({
     },
     photoUrl :{
         type : String,
-        default : "https:defaulturl.com"
+        default : "https://media.licdn.com/dms/image/v2/D5603AQFM5r7-OWJ3kw/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1720339764212?e=1741824000&v=beta&t=XECyKd80kkZ6cxXcSvhMox5Zk6Kzg4XgcywLa0VOYrw"
     }
 } ,{
     timestamps : true
 });
 
+//refactoring mongoose methods will make your code look cleaner modular hence easy for testablity
+userSchema.methods.getJWT = async function(){
+    const user = this
+    const token = await jwt.sign({ _id : user._id},"DevTinder@97" ,{ expiresIn: '7d' })
+    return token
+}
+
+userSchema.methods.isPwdValid = async function(passwordInputByUser){
+    const user = this
+    const isPwdValid = await bcrypt.compare(passwordInputByUser, user.password)
+    return isPwdValid
+}
 const userModel = mongoose.model("User", userSchema); // Pass the schema object here
 module.exports = userModel; // Fixed typo 'modules.exports' -> 'module.exports'

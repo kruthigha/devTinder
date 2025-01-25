@@ -2,14 +2,56 @@ const express = require("express");
 const {connectDb} = require("../src/config/database");
 const User = require("../src/models/user")
 const { validateSignup }= require("./utils/validation")
-const bcrypt = require("bcrypt")
 const app = express();
 const cookieParser = require("cookie-parser")
-const jwt = require("jsonwebtoken")
 const {userAuth} = require("./middleware/userAuth")
+const authRouter = require('./routes/auth')
+const profileRouter = require('./routes/profile')
+const requestRouter = require('./routes/request')
+const userRouter = require('./routes/user')
+const cors = require('cors')
 
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
+app.use(cors({
+  origin: 'http://localhost:5173', // Only the base origin
+  credentials: true, // Allow credentials (cookies, etc.)
+}));
+
+
+
+
+
+app.use('/',authRouter);
+app.use('/',profileRouter)
+app.use('/',requestRouter)
+app.use('/', userRouter)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Display all the users
 app.get("/feed", async(req, res)=>{
@@ -124,64 +166,7 @@ app.patch("/user/:userId", async (req, res) => {
   }
 });
 
-// Signup with user fname,lname emailID, password
-app.post("/signup", async(req,res) => {
-  try {
-  console.log("req",req.body)
-  validateSignup(req)
-  const {firstName,lastName,emailId,password} = req.body
-  const passHash =await bcrypt.hash(password, 10)
-  console.log(passHash)
-  const user = new User ({
-    firstName,
-    lastName,
-    emailId,
-    password : passHash
-  })
-   await user.save();
-   res.send("User saved successfully"+ user )
-  } catch (err) {
-   res.status(400).send("Error saving user" + err)
-  }
 
-})
-
-
-//login with emailId and pwd
-app.post("/login", async(req,res)=>{
-  try{
-    const {emailId,password} = req.body
-    const user = await User.findOne({ emailId })
-    console.log(user)
-    if(!user) {
-      throw new Error("Invalid credentials")
-    } 
-    const isPwdValid = await bcrypt.compare(password, user.password)
-    console.log(isPwdValid,user.password)
-    if(isPwdValid){
-      const token = await jwt.sign({ _id : user._id},"DevTinder@97")
-      console.log("Login Token "+ token)
-      res.cookie("token",token)
-      res.status(200).send("Login successful! " + user)
-    } else {
-      res.status(400).send("Invalid credentials")
-    }
-
-  } catch(err){
-    res.status(400).send("Error Logging In: "+ err)
-  }
-})
-
-
-app.get("/profile", userAuth , async(req,res)=>{
-  try {
-  const user = req.user
-  console.log("user",user)
-  res.send("User profile: "+ user)
-  } catch(err){
-    res.status(400).send("Error getting profile : "+ err)
-  }
-})
 
 connectDb()
   .then((res) => {

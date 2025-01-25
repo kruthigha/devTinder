@@ -16,7 +16,7 @@ const userAuth  = async(req,res,next)=>{
         req.user = user
         next();
     } catch(err){
-        res.status(400).send("Unable to auth user ", err)
+        res.status(400).send("Unable to auth user, err: "+ err)
       }
 }
 
